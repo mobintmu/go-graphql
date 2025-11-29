@@ -8,5 +8,5 @@ package resolvers
 import product "go-graphql/internal/product/service"
 
 type Resolver struct {
-	Product *product.Product
+	ProductService *product.Product
 }

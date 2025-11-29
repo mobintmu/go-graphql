@@ -34,7 +34,7 @@ func NewHTTPServer(cfg *config.Config, log *zap.Logger) *HTTPServer {
 // NewGraphQLResolver wires your services into the gqlgen resolvers.
 func NewGraphQLResolver(productSvc *product.Product) *resolvers.Resolver {
 	return &resolvers.Resolver{
-		Product: productSvc,
+		ProductService: productSvc,
 	}
 }
 

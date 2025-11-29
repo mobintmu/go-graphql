@@ -1,14 +1,34 @@
 scalar Time
+scalar Int64
 
+
+# Product types
 type Product {
-  id: ID!
-  product_name: String!
-  product_description : String!
-  price: Float!
-  is_active: Boolean!
-  createdAt: Time!
+  id: Int!
+  name: String!
+  description: String!
+  price: Int64!
 }
+
+# Response wrapper for list operations
+type ProductListResponse {
+  id: Int!
+  name: String!
+  description: String!
+  price: Int64!
+}
+
+# Error response
+type ErrorResponse {
+  code: String!
+  message: String!
+}
+
+# Queries
 type Query {
-  product(id: ID!): Product
-  products(limit: Int, offset: Int): [Product!]!
+  """Get a single product by ID"""
+  product(id: Int!): Product
+  
+  """Get a list of all products"""
+  products: [Product!]!
 }

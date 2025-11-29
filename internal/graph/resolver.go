@@ -7,5 +7,5 @@ import (
 // This file will be shared across your resolvers
 
 type Resolver struct {
-	Product *service.Product
+	ProductService *service.Product
 }

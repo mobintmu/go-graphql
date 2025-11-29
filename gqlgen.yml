@@ -18,3 +18,6 @@ models:
   Time:
     model:
       - go-graphql/internal/graph/model.Time
+  Int64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64
