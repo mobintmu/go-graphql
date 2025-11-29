@@ -6,11 +6,14 @@ import (
 	"net/http"
 
 	"go-graphql/internal/config"
-	"go-graphql/internal/graph"
+	"go-graphql/internal/graph/generated"
+	"go-graphql/internal/graph/resolvers"
+
+	// gqlgen generated package
+	product "go-graphql/internal/product/service"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -28,11 +31,21 @@ func NewHTTPServer(cfg *config.Config, log *zap.Logger) *HTTPServer {
 	}
 }
 
+// NewGraphQLResolver wires your services into the gqlgen resolvers.
+func NewGraphQLResolver(productSvc *product.Product) *resolvers.Resolver {
+	return &resolvers.Resolver{
+		Product: productSvc,
+	}
+}
+
 func RegisterGraphQLRoutes(
 	hs *HTTPServer,
-	schema *graph.ExecutableSchema,
+	resolver *resolvers.Resolver, // Assuming your resolver package is named 'resolvers'
 ) {
 	mux := http.NewServeMux()
+
+	// Create the executable schema using the injected resolver
+	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
 
 	// GraphQL handler
 	srv := handler.NewDefaultServer(schema)
@@ -45,11 +58,11 @@ func RegisterGraphQLRoutes(
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok"}`)
+		fmt.Fprint(w, `{"status":"ok"}`)
 	})
 
 	hs.server = &http.Server{
-		Addr:    hs.config.HTTPAddress,
+		Addr:    fmt.Sprintf("%s:%d", hs.config.HTTPAddress, hs.config.HTTPPort),
 		Handler: mux,
 	}
 }
@@ -58,9 +71,11 @@ func StartHTTPServer(lc fx.Lifecycle, hs *HTTPServer) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				hs.log.Info(fmt.Sprintf("Server running at http://%s:%s/playground", hs.config.HTTPAddress, hs.config.HTTPPort))
+				hs.log.Info("Server running",
+					zap.String("url", fmt.Sprintf("http://%s:%d/playground", hs.config.HTTPAddress, hs.config.HTTPPort)),
+				)
 				if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					hs.log.Error(fmt.Sprintf("Server error: %v", err))
+					hs.log.Error("Server error", zap.Error(err))
 				}
 			}()
 			return nil

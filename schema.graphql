@@ -1,0 +1,14 @@
+scalar Time
+
+type Product {
+  id: ID!
+  product_name: String!
+  product_description : String!
+  price: Float!
+  is_active: Boolean!
+  createdAt: Time!
+}
+type Query {
+  product(id: ID!): Product
+  products(limit: Int, offset: Int): [Product!]!
+}

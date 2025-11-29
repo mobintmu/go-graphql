@@ -1,25 +1,12 @@
 package resolvers
 
-import (
-	"go-graphql/internal/graph"
-)
+// This file will not be regenerated automatically.
+//
+// It serves as dependency injection for your app, add any dependencies you require
+// here.
+
+import product "go-graphql/internal/product/service"
 
 type Resolver struct {
-	*graph.Resolver
-}
-
-func (r *Resolver) Query() QueryResolver {
-	return &queryResolver{r.Resolver}
-}
-
-func (r *Resolver) Mutation() MutationResolver {
-	return &mutationResolver{r.Resolver}
-}
-
-type queryResolver struct {
-	*graph.Resolver
-}
-
-type mutationResolver struct {
-	*graph.Resolver
+	Product *product.Product
 }

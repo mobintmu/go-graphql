@@ -1,9 +1,8 @@
 package app
 
 import (
-	"go-graphql/internal/config"
-	"go-graphql/internal/graph"
-	"go-graphql/internal/graph/resolvers"
+	"go-graphql/internal/config" // gqlgen generated package
+	// your resolvers
 	"go-graphql/internal/health"
 	"go-graphql/internal/pkg/logger"
 	productService "go-graphql/internal/product/service"
@@ -35,8 +34,7 @@ func NewApp() *fx.App {
 			// services
 			productService.New,
 			// GraphQL
-			NewGraphQLResolver,
-			NewGraphQLSchema,
+			server.NewGraphQLResolver,
 		),
 		fx.Invoke(
 			server.RegisterGraphQLRoutes,
@@ -47,18 +45,4 @@ func NewApp() *fx.App {
 			logger.RegisterLoggerLifecycle,
 		),
 	)
-}
-
-func NewGraphQLResolver(productService *productService.Product) *graph.Resolver {
-	return &graph.Resolver{
-		Product: productService,
-	}
-}
-
-func NewGraphQLSchema(resolver *graph.Resolver) *graph.ExecutableSchema {
-	return graph.NewExecutableSchema(graph.Config{
-		Resolvers: &resolvers.Resolver{
-			Resolver: resolver,
-		},
-	})
 }
