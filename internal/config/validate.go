@@ -12,12 +12,8 @@ func ValidateConfig(cfg *Config) error {
 	// Run all validation checks
 	checks := []func(*Config) error{
 		validateHTTPPort,
-		validateGRPCPort,
-		validatePortConflict,
 		validateHTTPAddress,
 		validateEnvironment,
-		validateJWTSecret,
-		validateJWTExpiry,
 		validateDatabaseDSN,
 		validateRedisDSN,
 		validateRedisDB,
@@ -44,31 +40,6 @@ func validateHTTPPort(cfg *Config) error {
 			"invalid HTTP_PORT: %d. Expected value between 1 and 65535. "+
 				"Set APP_HTTP_PORT environment variable",
 			cfg.HTTPPort,
-		)
-	}
-	return nil
-}
-
-// validateGRPCPort validates GRPC port is in valid range
-func validateGRPCPort(cfg *Config) error {
-	if cfg.GRPCPort <= 0 || cfg.GRPCPort > 65535 {
-		return fmt.Errorf(
-			"invalid GRPC_PORT: %d. Expected value between 1 and 65535. "+
-				"Set APP_GRPC_PORT environment variable",
-			cfg.GRPCPort,
-		)
-	}
-	return nil
-}
-
-// validatePortConflict validates that HTTP and GRPC ports are different
-func validatePortConflict(cfg *Config) error {
-	if cfg.HTTPPort == cfg.GRPCPort {
-		return fmt.Errorf(
-			"port conflict: HTTP_PORT (%d) and GRPC_PORT (%d) cannot be the same. "+
-				"Set different values for APP_HTTP_PORT and APP_GRPC_PORT",
-			cfg.HTTPPort,
-			cfg.GRPCPort,
 		)
 	}
 	return nil
@@ -118,46 +89,6 @@ func validateEnvironment(cfg *Config) error {
 			"invalid ENV: %q. Expected one of: development, test, production. "+
 				"Set APP_ENV environment variable",
 			cfg.ENV,
-		)
-	}
-
-	return nil
-}
-
-// validateJWTSecret validates JWT secret is not empty
-func validateJWTSecret(cfg *Config) error {
-	if cfg.JWTSecret == "" {
-		return fmt.Errorf(
-			"JWT_SECRET is empty. " +
-				"Set APP_JWT_SECRET environment variable (must be at least 32 characters)",
-		)
-	}
-
-	// Warn if secret is too short (less than 32 characters)
-	if len(cfg.JWTSecret) < 32 {
-		log.Printf("⚠️  WARNING: JWT_SECRET is too short (%d chars). "+
-			"Recommended length: 32+ characters\n", len(cfg.JWTSecret))
-	}
-
-	return nil
-}
-
-// validateJWTExpiry validates JWT expiry hours is greater than 0
-func validateJWTExpiry(cfg *Config) error {
-	if cfg.JWTExpiryHours <= 0 {
-		return fmt.Errorf(
-			"invalid JWT_EXPIRY_HOURS: %d. Expected value greater than 0. "+
-				"Set APP_JWT_EXPIRY_HOURS environment variable",
-			cfg.JWTExpiryHours,
-		)
-	}
-
-	// Warn if expiry is very long
-	if cfg.JWTExpiryHours > 720 { // 30 days
-		log.Printf("⚠️  WARNING: JWT_EXPIRY_HOURS is very long (%d hours / %d days). "+
-			"Recommended: 24-72 hours for security\n",
-			cfg.JWTExpiryHours,
-			cfg.JWTExpiryHours/24,
 		)
 	}
 
@@ -259,10 +190,6 @@ func validateRedisTTL(cfg *Config) error {
 func validateWarnings(cfg *Config) {
 	// Warn about default JWT secret in production
 	if cfg.IsProduction() {
-		if cfg.JWTSecret == "this-is-a-secret-key" {
-			log.Printf("⚠️  SECURITY WARNING: Using default JWT_SECRET in production! " +
-				"Set APP_JWT_SECRET to a strong random secret (use: openssl rand -base64 32)\n")
-		}
 
 		// Warn about localhost address in production
 		if cfg.HTTPAddress == "127.0.0.1" {
@@ -283,9 +210,4 @@ func validateWarnings(cfg *Config) {
 		}
 	}
 
-	// Warn about short JWT expiry
-	if cfg.JWTExpiryHours < 1 {
-		log.Printf("⚠️  WARNING: JWT_EXPIRY_HOURS is very short (%d hours). "+
-			"Recommended minimum: 1 hour\n", cfg.JWTExpiryHours)
-	}
 }

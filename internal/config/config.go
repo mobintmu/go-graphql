@@ -52,12 +52,9 @@ func NewConfig() (*Config, error) {
 // buildConfig constructs the Config struct from viper values
 func buildConfig(v *viper.Viper) *Config {
 	return &Config{
-		HTTPPort:       v.GetInt("HTTP_PORT"),
-		HTTPAddress:    v.GetString("HTTP_ADDRESS"),
-		GRPCPort:       v.GetInt("GRPC_PORT"),
-		ENV:            v.GetString("ENV"),
-		JWTSecret:      v.GetString("JWT_SECRET"),
-		JWTExpiryHours: v.GetInt("JWT_EXPIRY_HOURS"),
+		HTTPPort:    v.GetInt("HTTP_PORT"),
+		HTTPAddress: v.GetString("HTTP_ADDRESS"),
+		ENV:         v.GetString("ENV"),
 		Database: DatabaseCfg{
 			DSN: v.GetString("DATABASE_DSN"),
 		},
