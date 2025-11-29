@@ -1,0 +1,40 @@
+scalar Time
+
+type Query {
+  getProduct(id: Int!): Product
+  listProducts(limit: Int, offset: Int): ProductList!
+}
+
+type Mutation {
+  createProduct(input: CreateProductInput!): Product!
+  updateProduct(id: Int!, input: UpdateProductInput!): Product!
+  deleteProduct(id: Int!): Boolean!
+}
+
+type Product {
+  id: Int!
+  name: String!
+  description: String
+  price: Float!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type ProductList {
+  items: [Product!]!
+  total: Int!
+  limit: Int!
+  offset: Int!
+}
+
+input CreateProductInput {
+  name: String!
+  description: String
+  price: Float!
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  price: Float
+}

@@ -2,9 +2,10 @@ package app
 
 import (
 	"go-graphql/internal/config"
+	"go-graphql/internal/graph"
+	"go-graphql/internal/graph/resolvers"
 	"go-graphql/internal/health"
 	"go-graphql/internal/pkg/logger"
-	productController "go-graphql/internal/product/controller"
 	productService "go-graphql/internal/product/service"
 	"go-graphql/internal/server"
 	"go-graphql/internal/storage/cache"
@@ -21,29 +22,43 @@ func NewApp() *fx.App {
 			logger.NewLogger,
 			config.NewConfig,
 			sql.InitialDB,
-			//server
+			// health check
 			health.New,
-			server.NewGinEngine,
-			server.CreateHTTPServer,
-			//db
-			migrate.NewRunner, // migration runner
+			// server
+			server.NewHTTPServer,
+			// db
+			migrate.NewRunner,
 			sqlc.New,
-			//cache
+			// cache
 			cache.NewClient,
 			cache.NewCacheStore,
-			//controller
-			productController.NewAdmin,
-			productController.NewClient,
-			//service
+			// services
 			productService.New,
+			// GraphQL
+			NewGraphQLResolver,
+			NewGraphQLSchema,
 		),
 		fx.Invoke(
-			server.RegisterRoutes,
+			server.RegisterGraphQLRoutes,
 			server.StartHTTPServer,
-			//migration
+			// migration
 			migrate.RunMigrations,
-			//life cycle
+			// life cycle
 			logger.RegisterLoggerLifecycle,
 		),
 	)
+}
+
+func NewGraphQLResolver(productService *productService.Product) *graph.Resolver {
+	return &graph.Resolver{
+		Product: productService,
+	}
+}
+
+func NewGraphQLSchema(resolver *graph.Resolver) *graph.ExecutableSchema {
+	return graph.NewExecutableSchema(graph.Config{
+		Resolvers: &resolvers.Resolver{
+			Resolver: resolver,
+		},
+	})
 }

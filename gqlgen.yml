@@ -1,0 +1,14 @@
+schema:
+  - schema.graphqls
+
+exec:
+  filename: internal/graph/generated.go
+  package: graph
+
+model:
+  filename: internal/graph/model.go
+  package: graph
+
+resolver:
+  layout: follow-schema
+  dir: internal/graph/resolvers

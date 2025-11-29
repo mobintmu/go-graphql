@@ -3,61 +3,71 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
-	"time"
 
 	"go-graphql/internal/config"
+	"go-graphql/internal/graph"
 
-	"github.com/gin-contrib/timeout"
-	"github.com/gin-gonic/gin"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
-func NewGinEngine() *gin.Engine {
-	if gin.Mode() != gin.ReleaseMode {
-		gin.SetMode(gin.DebugMode)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	r := gin.New()
-	r.Use(gin.Logger(),
-		gin.Recovery(),
-		timeout.New(timeout.WithTimeout(60*time.Second)))
-
-	return r
+type HTTPServer struct {
+	server *http.Server
+	config *config.Config
+	log    *zap.Logger
 }
 
-func CreateHTTPServer(engine *gin.Engine, cfg *config.Config) *http.Server {
-	return &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
-		Handler: engine,
+func NewHTTPServer(cfg *config.Config, log *zap.Logger) *HTTPServer {
+	return &HTTPServer{
+		config: cfg,
+		log:    log,
 	}
 }
 
-// NewHTTPServer is an Fx provider that sets up the HTTP server in the Fx lifecycle
-func StartHTTPServer(lc fx.Lifecycle, srv *http.Server) {
+func RegisterGraphQLRoutes(
+	hs *HTTPServer,
+	schema *graph.ExecutableSchema,
+) {
+	mux := http.NewServeMux()
+
+	// GraphQL handler
+	srv := handler.NewDefaultServer(schema)
+	mux.Handle("/query", srv)
+
+	// GraphQL Playground
+	mux.Handle("/playground", playground.Handler("GraphQL Playground", "/query"))
+
+	// Health check
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"status":"ok"}`)
+	})
+
+	hs.server = &http.Server{
+		Addr:    hs.config.HTTPAddress,
+		Handler: mux,
+	}
+}
+
+func StartHTTPServer(lc fx.Lifecycle, hs *HTTPServer) {
 	lc.Append(fx.Hook{
-		OnStart: func(startCtx context.Context) error {
-			log.Printf("🚀 HTTP server starting on %s", srv.Addr)
+		OnStart: func(ctx context.Context) error {
 			go func() {
-				if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					log.Fatalf("server error: %v", err)
+				hs.log.Info(fmt.Sprintf("Server running at http://%s:%s/playground", hs.config.HTTPAddress, hs.config.HTTPPort))
+				if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					hs.log.Error(fmt.Sprintf("Server error: %v", err))
 				}
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			log.Println("🛑 Shutting down HTTP server...")
-			shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			if err := srv.Shutdown(shutdownCtx); err != nil {
-				log.Printf("Shutdown error: %v", err)
-				return err
-			}
-			log.Println("✅ Server shutdown complete.")
-			return nil
+			hs.log.Info("Stopping server...")
+			return hs.server.Shutdown(ctx)
 		},
 	})
 }

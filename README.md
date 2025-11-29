@@ -91,3 +91,13 @@ export SONAR_TOKEN=your-sonar-token-here
 docker compose up
 go run cmd/server/main.go
 ```
+
+
+## GraphQL
+
+```
+go install github.com/99designs/gqlgen@latest
+gqlgen init
+gqlgen generate
+```
+
