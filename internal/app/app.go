@@ -5,6 +5,7 @@ import (
 	// your resolvers
 	"go-graphql/internal/health"
 	"go-graphql/internal/pkg/logger"
+	productController "go-graphql/internal/product/controller"
 	productService "go-graphql/internal/product/service"
 	"go-graphql/internal/server"
 	"go-graphql/internal/storage/cache"
@@ -24,6 +25,7 @@ func NewApp() *fx.App {
 			// health check
 			health.New,
 			// server
+			server.NewGinEngine,
 			server.NewHTTPServer,
 			// db
 			migrate.NewRunner,
@@ -31,13 +33,16 @@ func NewApp() *fx.App {
 			// cache
 			cache.NewClient,
 			cache.NewCacheStore,
+			//controller
+			productController.NewAdmin,
+			productController.NewClient,
 			// services
 			productService.New,
 			// GraphQL
 			server.NewGraphQLResolver,
 		),
 		fx.Invoke(
-			server.RegisterGraphQLRoutes,
+			server.RegisterRoutes,
 			server.StartHTTPServer,
 			// migration
 			migrate.RunMigrations,

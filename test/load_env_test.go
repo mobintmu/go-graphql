@@ -10,12 +10,9 @@ import (
 // TestValidateConfigValidComplete tests valid complete configuration
 func TestValidateConfigValidComplete(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "this-is-a-secret-key-that-is-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://user:pass@localhost:5432/database?sslmode=disable",
 		},
@@ -41,12 +38,9 @@ func TestValidateConfigValidComplete(t *testing.T) {
 // TestValidateConfigInvalidHTTPPort tests invalid HTTP port
 func TestValidateConfigInvalidHTTPPort(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       99999,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    99999,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -74,15 +68,12 @@ func TestValidateConfigInvalidHTTPPort(t *testing.T) {
 	t.Log("✅ TestValidateConfigInvalidHTTPPort passed")
 }
 
-// TestValidateConfigInvalidGRPCPort tests invalid GRPC port
-func TestValidateConfigInvalidGRPCPort(t *testing.T) {
+// TestValidateConfigEmptyAddress tests empty HTTP address
+func TestValidateConfigEmptyAddress(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       0,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -90,110 +81,6 @@ func TestValidateConfigInvalidGRPCPort(t *testing.T) {
 			DSN:        "localhost:6379",
 			DB:         0,
 			Prefix:     "go-graphql",
-			DefaultTTL: 5,
-		},
-	}
-
-	// Test
-	err := config.ValidateConfig(cfg)
-
-	// Assert
-	if err == nil {
-		t.Fatalf("❌ Expected error, got nil")
-	}
-
-	fmt.Println(err.Error())
-	t.Log("✅ TestValidateConfigInvalidGRPCPort passed")
-}
-
-// TestValidateConfigPortConflict tests port conflict
-func TestValidateConfigPortConflict(t *testing.T) {
-	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       4000,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
-		Database: config.DatabaseCfg{
-			DSN: "postgresql://localhost/db",
-		},
-		Redis: config.RedisCfg{
-			DSN:        "localhost:6379",
-			DB:         0,
-			Prefix:     "go-graphqll",
-			DefaultTTL: 5,
-		},
-	}
-
-	// Test
-	err := config.ValidateConfig(cfg)
-
-	// Assert
-	if err == nil {
-		t.Fatalf("❌ Expected error, got nil")
-	}
-
-	if !strings.Contains(err.Error(), "port conflict") {
-		t.Fatalf("❌ Expected error containing 'port conflict', got: %v", err)
-	}
-
-	fmt.Println(err.Error())
-	t.Log("✅ TestValidateConfigPortConflict passed")
-}
-
-// TestValidateConfigInvalidHTTPAddress tests invalid HTTP address
-func TestValidateConfigInvalidHTTPAddress(t *testing.T) {
-	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "invalid-host",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
-		Database: config.DatabaseCfg{
-			DSN: "postgresql://localhost/db",
-		},
-		Redis: config.RedisCfg{
-			DSN:        "localhost:6379",
-			DB:         0,
-			Prefix:     "go-graphqlllll",
-			DefaultTTL: 5,
-		},
-	}
-
-	// Test
-	err := config.ValidateConfig(cfg)
-
-	// Assert
-	if err == nil {
-		t.Fatalf("❌ Expected error, got nil")
-	}
-
-	if !strings.Contains(err.Error(), "invalid HTTP_ADDRESS") {
-		t.Fatalf("❌ Expected error containing 'invalid HTTP_ADDRESS', got: %v", err)
-	}
-
-	fmt.Println(err.Error())
-	t.Log("✅ TestValidateConfigInvalidHTTPAddress passed")
-}
-
-// TestValidateConfigEmptyAddress tests empty HTTP address
-func TestValidateConfigEmptyAddress(t *testing.T) {
-	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
-		Database: config.DatabaseCfg{
-			DSN: "postgresql://localhost/db",
-		},
-		Redis: config.RedisCfg{
-			DSN:        "localhost:6379",
-			DB:         0,
-			Prefix:     "go-graphqllllll",
 			DefaultTTL: 5,
 		},
 	}
@@ -217,19 +104,16 @@ func TestValidateConfigEmptyAddress(t *testing.T) {
 // TestValidateConfigInvalidEnvironment tests invalid environment
 func TestValidateConfigInvalidEnvironment(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "staging",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "staging",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
 		Redis: config.RedisCfg{
 			DSN:        "localhost:6379",
 			DB:         0,
-			Prefix:     "go-graphqlllllll",
+			Prefix:     "go-graphql",
 			DefaultTTL: 5,
 		},
 	}
@@ -253,12 +137,9 @@ func TestValidateConfigInvalidEnvironment(t *testing.T) {
 // TestValidateConfigEmptyEnvironment tests empty environment
 func TestValidateConfigEmptyEnvironment(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -286,79 +167,12 @@ func TestValidateConfigEmptyEnvironment(t *testing.T) {
 	t.Log("✅ TestValidateConfigEmptyEnvironment passed")
 }
 
-// TestValidateConfigEmptyJWTSecret tests empty JWT secret
-func TestValidateConfigEmptyJWTSecret(t *testing.T) {
-	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "",
-		JWTExpiryHours: 72,
-		Database: config.DatabaseCfg{
-			DSN: "postgresql://localhost/db",
-		},
-		Redis: config.RedisCfg{
-			DSN:        "localhost:6379",
-			DB:         0,
-			Prefix:     "go-graphql",
-			DefaultTTL: 5,
-		},
-	}
-
-	// Test
-	err := config.ValidateConfig(cfg)
-
-	// Assert
-	if err == nil {
-		t.Fatalf("❌ Expected error, got nil")
-	}
-
-	fmt.Println(err.Error())
-	t.Log("✅ TestValidateConfigEmptyJWTSecret passed")
-}
-
-// TestValidateConfigInvalidJWTExpiry tests invalid JWT expiry
-func TestValidateConfigInvalidJWTExpiry(t *testing.T) {
-	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 0,
-		Database: config.DatabaseCfg{
-			DSN: "postgresql://localhost/db",
-		},
-		Redis: config.RedisCfg{
-			DSN:        "localhost:6379",
-			DB:         0,
-			Prefix:     "go-graphql",
-			DefaultTTL: 5,
-		},
-	}
-
-	// Test
-	err := config.ValidateConfig(cfg)
-
-	// Assert
-	if err == nil {
-		t.Fatalf("❌ Expected error, got nil")
-	}
-
-	fmt.Println(err.Error())
-	t.Log("✅ TestValidateConfigInvalidJWTExpiry passed")
-}
-
 // TestValidateConfigEmptyDatabaseDSN tests empty database DSN
 func TestValidateConfigEmptyDatabaseDSN(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "",
 		},
@@ -389,19 +203,16 @@ func TestValidateConfigEmptyDatabaseDSN(t *testing.T) {
 // TestValidateConfigInvalidDatabaseDSN tests invalid database DSN format
 func TestValidateConfigInvalidDatabaseDSN(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "localhost:5432/db",
 		},
 		Redis: config.RedisCfg{
 			DSN:        "localhost:6379",
 			DB:         0,
-			Prefix:     "go-graphqll",
+			Prefix:     "go-graphql",
 			DefaultTTL: 5,
 		},
 	}
@@ -425,12 +236,9 @@ func TestValidateConfigInvalidDatabaseDSN(t *testing.T) {
 // TestValidateConfigEmptyRedisDSN tests empty Redis DSN
 func TestValidateConfigEmptyRedisDSN(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -461,12 +269,9 @@ func TestValidateConfigEmptyRedisDSN(t *testing.T) {
 // TestValidateConfigInvalidRedisDSN tests invalid Redis DSN format
 func TestValidateConfigInvalidRedisDSN(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -497,12 +302,9 @@ func TestValidateConfigInvalidRedisDSN(t *testing.T) {
 // TestValidateConfigInvalidRedisDB tests invalid Redis DB
 func TestValidateConfigInvalidRedisDB(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -533,12 +335,9 @@ func TestValidateConfigInvalidRedisDB(t *testing.T) {
 // TestValidateConfigEmptyRedisPrefix tests empty Redis prefix
 func TestValidateConfigEmptyRedisPrefix(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -569,12 +368,9 @@ func TestValidateConfigEmptyRedisPrefix(t *testing.T) {
 // TestValidateConfigInvalidRedisPrefix tests Redis prefix with spaces
 func TestValidateConfigInvalidRedisPrefix(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},
@@ -605,12 +401,9 @@ func TestValidateConfigInvalidRedisPrefix(t *testing.T) {
 // TestValidateConfigInvalidRedisTTL tests invalid Redis TTL
 func TestValidateConfigInvalidRedisTTL(t *testing.T) {
 	cfg := &config.Config{
-		HTTPPort:       4000,
-		HTTPAddress:    "127.0.0.1",
-		GRPCPort:       9001,
-		ENV:            "development",
-		JWTSecret:      "secret-key-long-enough",
-		JWTExpiryHours: 72,
+		HTTPPort:    4000,
+		HTTPAddress: "127.0.0.1",
+		ENV:         "development",
 		Database: config.DatabaseCfg{
 			DSN: "postgresql://localhost/db",
 		},

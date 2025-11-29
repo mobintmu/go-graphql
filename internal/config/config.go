@@ -15,9 +15,6 @@ type Config struct {
 	HTTPAddress    string
 	Database       DatabaseCfg
 	ENV            string
-	GRPCPort       int
-	JWTSecret      string
-	JWTExpiryHours int
 	Redis          RedisCfg
 }
 

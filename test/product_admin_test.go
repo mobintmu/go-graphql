@@ -21,8 +21,6 @@ func TestProductsAdmin(t *testing.T) {
 		addr := fmt.Sprintf("http://%s:%d", cfg.HTTPAddress, cfg.HTTPPort)
 		addr += "/api/v1/admin/products"
 		product := dto.ProductResponse{}
-		adminUnAuthorizedCreateProduct(t, addr)
-		adminUnAuthorizedListProduct(t, addr)
 		token := ""
 		adminCreateProduct(t, &product, addr, token)
 		adminListProduct(t, product, addr, token)
@@ -30,48 +28,6 @@ func TestProductsAdmin(t *testing.T) {
 		adminUpdateProduct(t, product, addr, token)
 		adminDeleteProduct(t, product, addr, token)
 		adminVerifyProductCreated(t, product, addr, token)
-	})
-}
-
-func adminUnAuthorizedCreateProduct(t *testing.T, addr string) {
-	t.Run("Unauthorized Create Product", func(t *testing.T) {
-		productRequest := dto.AdminCreateProductRequest{
-			Name:        "Test Product",
-			Description: "This is a test product",
-			Price:       1000,
-			IsActive:    true,
-		}
-		body, err := json.Marshal(productRequest)
-		if err != nil {
-			t.Fatalf("Failed to marshal product: %v", err)
-		}
-		resp, err := http.Post(addr, ApplicationJsonHeader, bytes.NewBuffer(body))
-		if err != nil {
-			t.Fatalf("Failed to send request: %v", err)
-		}
-		if resp.StatusCode != http.StatusUnauthorized {
-			t.Errorf("Expected status 401 Unauthorized, got %d", resp.StatusCode)
-			// Optional: Print response body for debugging
-			responseBody, _ := io.ReadAll(resp.Body)
-			t.Logf(ResponseBodyMessage, string(responseBody))
-		}
-		defer resp.Body.Close()
-	})
-}
-
-func adminUnAuthorizedListProduct(t *testing.T, addr string) {
-	t.Run("Unauthorized List Products", func(t *testing.T) {
-		resp, err := http.Get(addr)
-		if err != nil {
-			t.Fatalf(FailedToSendGetMessage, err)
-		}
-		if resp.StatusCode != http.StatusUnauthorized {
-			t.Errorf("Expected status 401 Unauthorized, got %d", resp.StatusCode)
-			// Optional: Print response body for debugging
-			responseBody, _ := io.ReadAll(resp.Body)
-			t.Logf(ResponseBodyMessage, string(responseBody))
-		}
-		defer resp.Body.Close()
 	})
 }
 

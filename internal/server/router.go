@@ -4,32 +4,50 @@ import (
 	"fmt"
 	"go-graphql/docs"
 	"go-graphql/internal/config"
+	"go-graphql/internal/graph/generated"
+	"go-graphql/internal/graph/resolvers"
 	"go-graphql/internal/health"
 	"go-graphql/internal/product/controller"
 	"log"
 	"net/http"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// RegisterRoutes is an Fx Invoke that wires up your HTTP routes
-func RegisterRoutes(engine *gin.Engine,
+func RegisterRoutes(
+	engine *gin.Engine,
 	health *health.Health,
 	cfg *config.Config,
 	adminProduct *controller.AdminProduct,
-	clientProduct *controller.ClientProduct) {
+	clientProduct *controller.ClientProduct,
+	resolver *resolvers.Resolver,
+) {
 	log.Println("🚀 Registering routes...")
-	//health
+
+	// Health check
 	engine.GET("/health", health.Handle)
-	//Admin Product routes
+
+	// Admin Product routes
 	adminGroup := engine.Group("/api/v1/admin/products")
 	adminProduct.RegisterRoutes(adminGroup, cfg)
-	//Client Product routes
+
+	// Client Product routes
 	clientGroup := engine.Group("/api/v1/products")
 	clientProduct.RegisterRoutes(clientGroup)
-	// Swagger
+
+	// GraphQL schema + handler
+	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
+	graphqlHandler := handler.NewDefaultServer(schema)
+
+	// GraphQL endpoints
+	engine.POST("/query", gin.WrapH(graphqlHandler))
+	engine.GET("/playground", gin.WrapH(playground.Handler("GraphQL Playground", "/query")))
+
+	// Swagger docs
 	docs.SwaggerInfo.Title = "My API"
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.Description = "This is a sample API with Gin and Swagger."

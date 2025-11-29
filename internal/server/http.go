@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"go-graphql/internal/config"
-	"go-graphql/internal/graph/generated"
 	"go-graphql/internal/graph/resolvers"
 
 	// gqlgen generated package
 	product "go-graphql/internal/product/service"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gin-contrib/timeout"
+
+	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -24,13 +25,6 @@ type HTTPServer struct {
 	log    *zap.Logger
 }
 
-func NewHTTPServer(cfg *config.Config, log *zap.Logger) *HTTPServer {
-	return &HTTPServer{
-		config: cfg,
-		log:    log,
-	}
-}
-
 // NewGraphQLResolver wires your services into the gqlgen resolvers.
 func NewGraphQLResolver(productSvc *product.Product) *resolvers.Resolver {
 	return &resolvers.Resolver{
@@ -38,32 +32,30 @@ func NewGraphQLResolver(productSvc *product.Product) *resolvers.Resolver {
 	}
 }
 
-func RegisterGraphQLRoutes(
-	hs *HTTPServer,
-	resolver *resolvers.Resolver, // Assuming your resolver package is named 'resolvers'
-) {
-	mux := http.NewServeMux()
+func NewGinEngine() *gin.Engine {
+	if gin.Mode() != gin.ReleaseMode {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	// Create the executable schema using the injected resolver
-	schema := generated.NewExecutableSchema(generated.Config{Resolvers: resolver})
+	r := gin.New()
+	r.Use(gin.Logger(),
+		gin.Recovery(),
+		timeout.New(timeout.WithTimeout(60*time.Second)))
 
-	// GraphQL handler
-	srv := handler.NewDefaultServer(schema)
-	mux.Handle("/query", srv)
+	return r
+}
 
-	// GraphQL Playground
-	mux.Handle("/playground", playground.Handler("GraphQL Playground", "/query"))
-
-	// Health check
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"status":"ok"}`)
-	})
-
-	hs.server = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", hs.config.HTTPAddress, hs.config.HTTPPort),
-		Handler: mux,
+func NewHTTPServer(engine *gin.Engine, cfg *config.Config, logger *zap.Logger) *HTTPServer {
+	httpServer := http.Server{
+		Addr:    fmt.Sprintf("%s:%d", cfg.HTTPAddress, cfg.HTTPPort),
+		Handler: engine,
+	}
+	return &HTTPServer{
+		server: &httpServer,
+		config: cfg,
+		log:    logger,
 	}
 }
 
