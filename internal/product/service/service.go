@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"go-graphql/internal/config"
+	"go-graphql/internal/graph/model"
+	"go-graphql/internal/pkg/logger/utils"
 	"go-graphql/internal/product/dto"
 	"go-graphql/internal/storage/cache"
 	"go-graphql/internal/storage/sql/sqlc"
@@ -98,7 +101,7 @@ func (s *Product) GetProductByID(ctx context.Context, id int32) (dto.ProductResp
 	return result, nil
 }
 
-func (s *Product) ListProducts(ctx context.Context) (dto.ClientListProductsResponse, error) {
+func (s *Product) ListProductsWithoutFilter(ctx context.Context) (dto.ClientListProductsResponse, error) {
 	var resp []dto.ProductResponse
 	if err := s.memory.Get(ctx, s.memory.KeyAllProducts(), &resp); err == nil {
 		return resp, nil
@@ -118,4 +121,87 @@ func (s *Product) ListProducts(ctx context.Context) (dto.ClientListProductsRespo
 	}
 	s.memory.Set(ctx, s.memory.KeyAllProducts(), resp, s.cfg.Redis.DefaultTTL)
 	return resp, nil
+}
+
+func (s *Product) ListProducts(ctx context.Context, filter *model.ProductFilter, pagination *model.PaginationInput) (*model.ProductConnection, error) {
+	params := s.graphqlFilterToSQLCParams(filter, pagination)
+	products, err := s.query.ListProductsWithFilters(ctx, params)
+	if err != nil {
+		s.log.Error("Failed to list products", zap.Error(err))
+		return nil, err
+	}
+
+	paramsCount := s.graphqlCountProductsFilterToSQLCParams(filter)
+	total, err := s.query.CountProductsWithFilters(ctx, paramsCount)
+	if err != nil {
+		s.log.Error("Failed to count products", zap.Error(err))
+		return nil, err
+	}
+
+	var result []*model.Product
+	for _, p := range products {
+		result = append(result, &model.Product{
+			ID:          int(p.ID),
+			Name:        p.ProductName,
+			Description: p.ProductDescription,
+			Price:       p.Price,
+			IsActive:    p.IsActive,
+		})
+	}
+	return &model.ProductConnection{
+		Products: result,
+		Total:    int(total),
+	}, nil
+}
+
+// graphqlFilterToSQLCParams converts GraphQL ProductFilter to SQLC params
+func (s *Product) graphqlFilterToSQLCParams(
+	filter *model.ProductFilter,
+	pagination *model.PaginationInput,
+) sqlc.ListProductsWithFiltersParams {
+	// Initialize with defaults
+	params := sqlc.ListProductsWithFiltersParams{
+		Limit:  sql.NullInt64{Int64: 10, Valid: true},
+		Offset: sql.NullInt64{Int64: 0, Valid: true},
+	}
+
+	// Apply filter if provided
+	if filter != nil {
+		params.ID = utils.ToNullInt32(filter.ID)
+		params.ProductName = utils.ToNullString(filter.Name)
+		params.ProductDescription = utils.ToNullString(filter.Description)
+		params.MinPrice = utils.ToNullInt64(filter.MinPrice)
+		params.MaxPrice = utils.ToNullInt64(filter.MaxPrice)
+		params.IsActive = utils.ToNullBool(filter.IsActive)
+	}
+
+	if pagination != nil {
+		if pagination.Limit != nil {
+			params.Limit = sql.NullInt64{Int64: int64(*pagination.Limit), Valid: true}
+		}
+		if pagination.Offset != nil {
+			params.Offset = sql.NullInt64{Int64: int64(*pagination.Offset), Valid: true}
+		}
+	}
+
+	return params
+}
+
+func (s *Product) graphqlCountProductsFilterToSQLCParams(
+	filter *model.ProductFilter,
+) sqlc.CountProductsWithFiltersParams {
+	// Initialize with defaults
+	params := sqlc.CountProductsWithFiltersParams{}
+
+	// Apply filter if provided
+	if filter != nil {
+		params.ID = utils.ToNullInt32(filter.ID)
+		params.ProductName = utils.ToNullString(filter.Name)
+		params.ProductDescription = utils.ToNullString(filter.Description)
+		params.MinPrice = utils.ToNullInt64(filter.MinPrice)
+		params.MaxPrice = utils.ToNullInt64(filter.MaxPrice)
+		params.IsActive = utils.ToNullBool(filter.IsActive)
+	}
+
+	return params
 }

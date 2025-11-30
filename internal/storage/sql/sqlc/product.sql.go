@@ -7,7 +7,43 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 )
+
+const countProductsWithFilters = `-- name: CountProductsWithFilters :one
+SELECT COUNT(*) as count
+FROM products
+WHERE
+  ($1::int IS NULL OR id = $1)
+  AND ($2::text IS NULL OR product_name ILIKE '%' || $2 || '%')
+  AND ($3::bigint IS NULL OR price >= $3)
+  AND ($4::bigint IS NULL OR price <= $4)
+  AND ($5::bool IS NULL OR is_active = $5)
+  AND ($6::text IS NULL OR product_description ILIKE '%' || $6 || '%')
+`
+
+type CountProductsWithFiltersParams struct {
+	ID                 sql.NullInt32
+	ProductName        sql.NullString
+	MinPrice           sql.NullInt64
+	MaxPrice           sql.NullInt64
+	IsActive           sql.NullBool
+	ProductDescription sql.NullString
+}
+
+func (q *Queries) CountProductsWithFilters(ctx context.Context, arg CountProductsWithFiltersParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countProductsWithFilters,
+		arg.ID,
+		arg.ProductName,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.IsActive,
+		arg.ProductDescription,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const createProduct = `-- name: CreateProduct :one
 INSERT INTO products (product_name, product_description, price, is_active)
@@ -74,6 +110,71 @@ SELECT id, product_name, product_description, price, is_active, created_at FROM 
 
 func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 	rows, err := q.db.QueryContext(ctx, listProducts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProductName,
+			&i.ProductDescription,
+			&i.Price,
+			&i.IsActive,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProductsWithFilters = `-- name: ListProductsWithFilters :many
+SELECT id, product_name, product_description, price, is_active, created_at
+FROM products
+WHERE
+  ($1::int IS NULL OR id = $1)
+  AND ($2::text IS NULL OR product_name ILIKE '%' || $2 || '%')
+  AND ($3::bigint IS NULL OR price >= $3)
+  AND ($4::bigint IS NULL OR price <= $4)
+  AND ($5::bool IS NULL OR is_active = $5)
+  AND ($6::text IS NULL OR product_description ILIKE '%' || $6 || '%')
+ORDER BY id
+LIMIT $8
+OFFSET $7
+`
+
+type ListProductsWithFiltersParams struct {
+	ID                 sql.NullInt32
+	ProductName        sql.NullString
+	MinPrice           sql.NullInt64
+	MaxPrice           sql.NullInt64
+	IsActive           sql.NullBool
+	ProductDescription sql.NullString
+	Offset             sql.NullInt64
+	Limit              sql.NullInt64
+}
+
+func (q *Queries) ListProductsWithFilters(ctx context.Context, arg ListProductsWithFiltersParams) ([]Product, error) {
+	rows, err := q.db.QueryContext(ctx, listProductsWithFilters,
+		arg.ID,
+		arg.ProductName,
+		arg.MinPrice,
+		arg.MaxPrice,
+		arg.IsActive,
+		arg.ProductDescription,
+		arg.Offset,
+		arg.Limit,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -56,7 +56,7 @@ func (c *ClientProduct) GetProductByID(ctx *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /api/v1/products [get]
 func (c *ClientProduct) ListProducts(ctx *gin.Context) {
-	products, err := c.Service.ListProducts(ctx)
+	products, err := c.Service.ListProductsWithoutFilter(ctx)
 	if err != nil {
 		response.JSONError(ctx, http.StatusInternalServerError, err)
 		return

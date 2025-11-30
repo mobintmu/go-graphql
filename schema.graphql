@@ -1,34 +1,37 @@
 scalar Time
 scalar Int64
 
+input ProductFilter {
+  id: Int
+  name: String
+  description: String
+  minPrice: Int64
+  maxPrice: Int64
+  isActive: Boolean
+}
 
-# Product types
+input PaginationInput {
+  limit: Int
+  offset: Int
+}
+
 type Product {
   id: Int!
   name: String!
   description: String!
   price: Int64!
+  isActive: Boolean!
 }
 
-# Response wrapper for list operations
-type ProductListResponse {
-  id: Int!
-  name: String!
-  description: String!
-  price: Int64!
-}
-
-# Error response
-type ErrorResponse {
-  code: String!
-  message: String!
+type ProductConnection {
+  products: [Product!]!
+  total: Int!
 }
 
 # Queries
 type Query {
-  """Get a single product by ID"""
-  product(id: Int!): Product
-  
-  """Get a list of all products"""
-  products: [Product!]!
+  products(
+    filter: ProductFilter
+    pagination: PaginationInput
+  ): ProductConnection!  
 }

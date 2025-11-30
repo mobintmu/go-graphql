@@ -146,7 +146,7 @@ func (c *AdminProduct) GetProductByID(ctx *gin.Context) {
 // @Security BearerAuth
 // @Router /api/v1/admin/products [get]
 func (c *AdminProduct) ListProducts(ctx *gin.Context) {
-	products, err := c.Service.ListProducts(ctx)
+	products, err := c.Service.ListProductsWithoutFilter(ctx)
 	if err != nil {
 		response.JSONError(ctx, http.StatusInternalServerError, err)
 		return

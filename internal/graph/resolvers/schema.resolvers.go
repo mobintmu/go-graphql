@@ -12,40 +12,29 @@ import (
 	"go-graphql/internal/graph/model"
 )
 
-// Product is the resolver for the product field.
-func (r *queryResolver) Product(ctx context.Context, id int) (*model.Product, error) {
-	product, err := r.ProductService.GetProductByID(ctx, int32(id))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get product: %w", err)
-	}
-
-	return &model.Product{
-		ID:          int(product.ID),
-		Name:        product.Name,
-		Description: product.Description,
-		Price:       product.Price,
-	}, nil
-}
-
 // Products is the resolver for the products field.
-func (r *queryResolver) Products(ctx context.Context) ([]*model.Product, error) {
-	products, err := r.ProductService.ListProducts(ctx)
+func (r *queryResolver) Products(ctx context.Context, filter *model.ProductFilter, pagination *model.PaginationInput) (*model.ProductConnection, error) {
+	products, err := r.ProductService.ListProducts(ctx, filter, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list products: %w", err)
 	}
 
 	// Map service DTOs into GraphQL models
 	var result []*model.Product
-	for _, p := range products {
+	for _, p := range products.Products {
 		result = append(result, &model.Product{
 			ID:          int(p.ID),
 			Name:        p.Name,
 			Description: p.Description,
 			Price:       p.Price,
+			IsActive:    p.IsActive,
 		})
 	}
 
-	return result, nil
+	return &model.ProductConnection{
+		Products: result,
+		Total:    products.Total,
+	}, nil
 }
 
 // Query returns generated.QueryResolver implementation.

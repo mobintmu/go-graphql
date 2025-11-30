@@ -39,6 +39,7 @@ swag init --parseDependency --parseInternal -g cmd/server/main.go
 docker compose up -d
 
 ## SQLC Generator
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 ```
 sqlc generate
@@ -101,3 +102,45 @@ gqlgen init
 gqlgen generate
 ```
 
+
+## build new query
+
+```
+gqlgen generate
+add sql in sqlc
+sqlc generate
+```
+
+
+```sql
+-- name: ListProductsWithFilters :many
+SELECT id, product_name, product_description, price, is_active, created_at
+FROM products
+WHERE
+  (sqlc.narg('id')::int IS NULL OR id = sqlc.narg('id'))
+  AND (sqlc.narg('product_name')::text IS NULL OR product_name ILIKE '%' || sqlc.narg('product_name') || '%')
+  AND (sqlc.narg('min_price')::bigint IS NULL OR price >= sqlc.narg('min_price'))
+  AND (sqlc.narg('max_price')::bigint IS NULL OR price <= sqlc.narg('max_price'))
+  AND (sqlc.narg('is_active')::bool IS NULL OR is_active = sqlc.narg('is_active'))
+  AND (sqlc.narg('product_description')::text IS NULL OR product_description ILIKE '%' || sqlc.narg('product_description') || '%')
+ORDER BY id
+LIMIT sqlc.narg('limit')
+OFFSET sqlc.narg('offset');
+```
+
+
+
+```
+query {
+  products(filter: { id: 32 }) {
+    products {
+      id
+      name
+      description
+      price
+      isActive
+    }
+    total
+  }
+}
+```

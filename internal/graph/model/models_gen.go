@@ -2,9 +2,9 @@
 
 package model
 
-type ErrorResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+type PaginationInput struct {
+	Limit  *int `json:"limit,omitempty"`
+	Offset *int `json:"offset,omitempty"`
 }
 
 type Product struct {
@@ -12,13 +12,21 @@ type Product struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Price       int64  `json:"price"`
+	IsActive    bool   `json:"isActive"`
 }
 
-type ProductListResponse struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Price       int64  `json:"price"`
+type ProductConnection struct {
+	Products []*Product `json:"products"`
+	Total    int        `json:"total"`
+}
+
+type ProductFilter struct {
+	ID          *int    `json:"id,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	MinPrice    *int64  `json:"minPrice,omitempty"`
+	MaxPrice    *int64  `json:"maxPrice,omitempty"`
+	IsActive    *bool   `json:"isActive,omitempty"`
 }
 
 type Query struct {
